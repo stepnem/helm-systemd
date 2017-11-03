@@ -79,9 +79,7 @@
 
 (defun helm-systemd-concatspace (word-list)
   "Concatenate list of string with spaces as separator"
-  (mapconcat 'identity
-             (delq nil word-list)
-             " "))
+  (mapconcat 'identity word-list " "))
 
 (defun helm-systemd-systemctl-command (&rest args)
   "Construct string with: 'systemctl default-args' ARGS"
