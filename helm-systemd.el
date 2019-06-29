@@ -77,14 +77,11 @@
     (delq nil map))
   "Keymap for `helm-systemd'.")
 
-(defun helm-systemd-concatspace (word-list)
-  "Concatenate list of string with spaces as separator"
-  (mapconcat 'identity word-list " "))
-
 (defun helm-systemd-systemctl-command (&rest args)
   "Construct string with: 'systemctl default-args' ARGS"
-  (helm-systemd-concatspace (push (concat "systemctl " (helm-systemd-command-line-option))
-                                  args) ))
+  (string-join (push (concat "systemctl " (helm-systemd-command-line-option))
+                     args)
+               " "))
 
 (defun helm-systemd-get-canditates (sysd-options)
   "Return a list of systemd service unit"
@@ -181,7 +178,7 @@
            for loaded = (nth 1 split)
            for active = (nth 2 split)
            for running = (nth 3 split)
-           for description = (if running (helm-systemd-concatspace (cl-subseq split 4)))
+           for description = (if running (string-join (cl-subseq split 4) " "))
            collect (let ((line i))
                      (unless (and unit loaded active running description)
                        line)
@@ -190,11 +187,12 @@
                                  (car
                                   (split-string
                                    (shell-command-to-string
-                                    (helm-systemd-concatspace `("systemctl" "is-enabled "
-                                                                ,(if (string-match "User"
-                                                                                   (cdr (assoc 'name source)))
-                                                                     "--user")
-                                                                "--" ,unit))))))
+                                    (string-join `("systemctl" "is-enabled "
+                                                               ,(if (string-match "User"
+                                                                                  (cdr (assoc 'name source)))
+                                                                    "--user")
+                                                               "--" ,unit)
+                                                 " ")))))
                                 (propena (cond ((string= isenabled "enabled") 'helm-bookmark-info)
                                                ((string= isenabled "static") 'helm-bookmark-gnus)
                                                (t 'helm-bookmark-gnus)))
