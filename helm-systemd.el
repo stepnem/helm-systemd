@@ -133,8 +133,7 @@ This just passes the \"--all\" option to systemctl."
     (define-key map (kbd "<M-RET>")       'helm-cr-empty-string)
     (define-key map (kbd "C-]")           'helm-systemd-next-type)
     (define-key map (kbd "C-[")           'helm-systemd-prev-type)
-
-    (delq nil map))
+    map)
   "Keymap for `helm-systemd'.")
 
 (defun helm-systemd-systemctl-command (&rest args)
