@@ -28,8 +28,9 @@
 
 (require 'cl-lib)
 (require 'helm)
-(require 'with-editor)
+(eval-when-compile (require 'rx))
 (require 'subr-x)
+(require 'with-editor)
 
 (defgroup helm-systemd nil "Helm interface to systemd units."
   :group 'helm)
@@ -71,6 +72,11 @@ This just passes the \"--all\" option to systemctl."
     ("restart". "Restarted")
     ("stop" ."Stopped")
     ("start". "Started")))
+
+(defcustom helm-systemd-angry-fruit-salad t
+  "If non-nil, colorize helm completion candidates."
+  :group 'helm-systemd
+  :type 'boolean)
 
 (defface helm-systemd-property
     '((t (:inherit font-lock-keyword-face)))
@@ -142,6 +148,38 @@ This just passes the \"--all\" option to systemctl."
                      args)
                " "))
 
+(defun helm-systemd-propertize-description (unit description userp)
+  "Propertize systemd UNIT DESCRIPTION for display in helm completions buffer.
+USERP non-nil means this is a user unit."
+  (let* ((state
+          (string-trim
+           (shell-command-to-string
+            (string-join
+             `("systemctl" "is-enabled " ,(when userp "--user") "--" ,unit)
+             " "))))
+         (state (pcase state
+                  ("enabled-runtime" "runtime")
+                  ((rx bos "Failed") "XXXXXX")
+                  (_ state)))
+         (line (concat (format "%8s" state) " " description)))
+    (if (not helm-systemd-angry-fruit-salad)
+        line
+      (setq line (propertize line 'face 'helm-systemd-info))
+      (dolist (pair '(("enabled" . helm-systemd-info)
+                      ("runtime" . helm-systemd-info)
+                      ("static" . helm-systemd-static)
+                      ("active" . helm-systemd-active)
+                      ("mounted" . helm-systemd-running)
+                      ("running" . helm-systemd-running)
+                      ("listening" . font-lock-keyword-face)
+                      ("failed" . helm-systemd-failed)
+                      ("XXXXXX" . helm-systemd-failed))
+                    line)
+        (setq line
+              (replace-regexp-in-string (concat "\\<" (car pair) "\\>")
+                                        (propertize (car pair) 'face (cdr pair))
+                                        line nil t))))))
+
 (defun helm-systemd-get-candidates (&optional sysd-options)
   "Return a list of systemd service units.
 SYSD-OPTIONS is an options string passed to the systemd subcommand."
@@ -168,7 +206,10 @@ SYSD-OPTIONS is an options string passed to the systemd subcommand."
     (setq left-col-width (number-to-string left-col-width))
     (maphash (lambda (unit line)
                (let ((desc (string-trim-left (substring line (length unit)))))
-                 (push (format (concat "%-" left-col-width "s %s") unit desc)
+                 (push (format (concat "%-" left-col-width "s %s")
+                               unit
+                               (helm-systemd-propertize-description
+                                unit desc sysd-options))
                        result)))
              table)
     (nreverse result)))
@@ -221,79 +262,6 @@ buffer is not displayed, only its contents updated."
               (helm-systemd-display "status" unit userp)))
           units)))
 
-(defun helm-systemd-transformer (candidates source)
-  "Candidate transformer for `helm-systemd' sources.
-CANDIDATES is a list of candidates, SOURCE (string) is the source name."
-  (cl-loop for i in candidates
-           for split = (split-string i)
-           for unit = (car split)
-           for loaded = (nth 1 split)
-           for active = (nth 2 split)
-           for running = (nth 3 split)
-           for description = (if running (string-join (cl-subseq split 4) " "))
-           collect (let ((line i))
-                     (if (not (and unit loaded active running description))
-                         line
-                       (if loaded
-                           (let* ((isenabled
-                                   (car
-                                    (split-string
-                                     (shell-command-to-string
-                                      (string-join `("systemctl" "is-enabled "
-                                                                 ,(if (string-match "User"
-                                                                                    (cdr (assoc 'name source)))
-                                                                      "--user")
-                                                                 "--" ,unit)
-                                                   " ")))))
-                                  (propena (cond ((string= isenabled "enabled") 'helm-systemd-info)
-                                                 ((string= isenabled "static") 'helm-systemd-static)
-                                                 (t 'helm-systemd-info)))
-                                  (isenabled (format "%8s" isenabled) ))
-                             (setq line (if active
-                                            (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " " loaded " ") line nil t)
-                                          (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " ") line nil t))))) ;; list-units case
-                       (if (or (string=  running "mounted") (string=  running "running"))
-                           (setq line
-                                 (replace-regexp-in-string running
-                                                           (propertize
-                                                            running
-                                                            'face
-                                                            'helm-systemd-running)
-                                                           line nil t)))
-                       (if (or (string= running "exited") (string= running "dead"))
-                           (setq line
-                                 (replace-regexp-in-string running
-                                                           (propertize
-                                                            running
-                                                            'face
-                                                            'helm-systemd-info)
-                                                           line nil t)))
-                       (if (string= running "listening")
-                           (setq line
-                                 (replace-regexp-in-string running
-                                                           (propertize
-                                                            running
-                                                            'face
-                                                            'font-lock-keyword-face)
-                                                           line nil t)))
-                       (if (string= running "failed")
-                           (setq line
-                                 (replace-regexp-in-string running
-                                                           (propertize
-                                                            running
-                                                            'face
-                                                            'helm-systemd-failed)
-                                                           line nil t)))
-                       (if description
-                           (setq line
-                                 (replace-regexp-in-string
-                                  description (propertize
-                                               description
-                                               'face
-                                               'helm-systemd-info)
-                                  line nil t)))
-                       line))))
-
 (defmacro helm-systemd-make-action (sysd-verb userp)
   "Helper macro for systemd helm sources.
 Return a lambda function suitable as a helm action.
@@ -319,8 +287,7 @@ action is for a user unit."
              "Start"   (helm-systemd-make-action "start" nil))
     :persistent-action #'helm-systemd-show-status
     :persistent-help "Show unit status"
-    :keymap helm-systemd-map
-    :filtered-candidate-transformer #'helm-systemd-transformer))
+    :keymap helm-systemd-map))
 
 (defun helm-systemd-build-source-user ()
   "Helm source for systemd user units."
@@ -336,8 +303,7 @@ action is for a user unit."
                                    (with-editor-async-shell-command (concat "systemctl --user --full edit " (car (split-string candidate))) )))
     :persistent-action (lambda (line) (funcall #'helm-systemd-show-status line t))
     :persistent-help "Show unit status"
-    :keymap helm-systemd-map
-    :filtered-candidate-transformer #'helm-systemd-transformer))
+    :keymap helm-systemd-map))
 
 ;;;###autoload
 (defun helm-systemd ()
