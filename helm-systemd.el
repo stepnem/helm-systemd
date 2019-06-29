@@ -78,13 +78,14 @@
   "Keymap for `helm-systemd'.")
 
 (defun helm-systemd-systemctl-command (&rest args)
-  "Construct string with: 'systemctl default-args' ARGS"
+  "Construct string with: 'systemctl default-args' ARGS."
   (string-join (push (concat "systemctl " (helm-systemd-command-line-option))
                      args)
                " "))
 
 (defun helm-systemd-get-candidates (sysd-options)
-  "Return a list of systemd service unit"
+  "Return a list of systemd service units.
+SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
   (let* ((result ())
          (leftcolumnwidth
           (number-to-string 25))
@@ -164,7 +165,7 @@
     (helm-force-update )))
 
 (defun helm-systemd-show-status (_line &optional userp)
-  "Show unit status"
+  "Show unit status. USERP non-nil means this is a user unit."
   (let ((units (helm-marked-candidates)))
     (mapc (lambda (line)
             (let ((unit (car (split-string line))))
