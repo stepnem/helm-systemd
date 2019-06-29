@@ -94,8 +94,6 @@
   (setq-local font-lock-defaults '(helm-systemd-status-font-lock-keywords))
   (font-lock-mode t))
 
-(add-to-list 'auto-mode-alist `(, (concat (regexp-quote helm-systemd-buffer-name) "\\'") . helm-systemd-status-mode))
-
 (defun helm-systemd-command-line-option ()
   (concat "--no-pager --no-legend -t " (car helm-systemd-unit-types) (if helm-systemd-list-all " --all")))
 
