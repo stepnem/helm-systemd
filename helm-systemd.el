@@ -31,6 +31,9 @@
 (require 'with-editor)
 (require 'subr-x)
 
+(defgroup helm-systemd nil "Helm interface to systemd units."
+  :group 'helm)
+
 (defvar helm-systemd-unit-types '("service" "timer" "mount" "target" "socket" "scope" "device"))
 (defvar helm-systemd-list-all nil)
 (defvar helm-systemd-list-not-loaded nil)
@@ -43,16 +46,46 @@
     ("stop" ."Stopped")
     ("start". "Started")))
 
+(defface helm-systemd-property
+    '((t (:inherit font-lock-keyword-face)))
+  "Face used for systemd property text."
+  :group 'helm-systemd)
+
+(defface helm-systemd-info
+    '((t (:inherit font-lock-comment-face)))
+  "Face used for systemd informative text."
+  :group 'helm-systemd)
+
+(defface helm-systemd-static
+    '((t (:foreground "magenta")))
+  "Face used for systemd static unit status."
+  :group 'helm-systemd)
+
+(defface helm-systemd-running
+    '((t (:foreground "green" :bold t)))
+  "Face used for systemd running unit status."
+  :group 'helm-systemd)
+
+(defface helm-systemd-active
+    '((t (:foreground "green")))
+  "Face used for systemd active unit status."
+  :group 'helm-systemd)
+
+(defface helm-systemd-failed
+    '((t (:foreground "red" :bold t)))
+  "Face used for systemd failed unit status."
+  :group 'helm-systemd)
+
 (defvar helm-systemd-status-font-lock-keywords
-  `(("\\(Loaded\\|Active\\|Status\\|Docs\\|Process\\|Main PID\\|Tasks\\|CGroup\\):" (1 'helm-bookmark-gnus) )
-    ("active (running)" 0 'hi-green)
-    ("inactive (dead)" 0 'helm-bookmark-info)
-    ("active (exited)" 0 'helm-bookmark-info)
+  '(("\\(Loaded\\|Active\\|Status\\|Docs\\|Process\\|Main PID\\|Tasks\\|CGroup\\):" 1 'helm-systemd-property)
+    ("active (running)" 0 'helm-systemd-running)
+    ("inactive (dead)" 0 'helm-systemd-info)
+    ("active (exited)" 0 'helm-systemd-active)
 
-    ("[fF]ailed" 0 'diredp-executable-tag)
+    ("[fF]ailed" 0 'helm-systemd-failed)
 
-    ("─\\([0-9]+\\)"  (1 'helm-bookmark-info))     ; PIDs
-    ("[●🔜] .*"  0 'helm-buffer-file) ; command lines ●🔜
+    ("─\\([0-9]+\\)" 1 'helm-systemd-info) ; PID
+    ("[●🔜] .*" 0 'helm-systemd-info)  ; command lines
     "Default expressions to highlight in `helm systemd log'."))
 
 (define-derived-mode helm-systemd-status-mode fundamental-mode "Systemd-log"
@@ -143,7 +176,6 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
         (insert command)
         )
       (insert "\n"))
-    ;;    (propertise-sysd-buffer )
     (unless nodisplay
       (display-buffer (current-buffer)))))
 
@@ -194,9 +226,9 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
                                                                     "--user")
                                                                "--" ,unit)
                                                  " ")))))
-                                (propena (cond ((string= isenabled "enabled") 'helm-bookmark-info)
-                                               ((string= isenabled "static") 'helm-bookmark-gnus)
-                                               (t 'helm-bookmark-gnus)))
+                                (propena (cond ((string= isenabled "enabled") 'helm-systemd-info)
+                                               ((string= isenabled "static") 'helm-systemd-static)
+                                               (t 'helm-systemd-info)))
                                 (isenabled (format "%8s" isenabled) ))
                            (setq line (if active
                                           (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " " loaded " ") line nil t)
@@ -207,35 +239,40 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
                                                          (propertize
                                                           running
                                                           'face
-                                                          'helm-ff-directory) line nil t)))
+                                                          'helm-systemd-running)
+                                                         line nil t)))
                      (if (or (string= running "exited") (string= running "dead"))
                          (setq line
                                (replace-regexp-in-string running
                                                          (propertize
                                                           running
                                                           'face
-                                                          'helm-bookmark-info) line nil t)))
+                                                          'helm-systemd-info)
+                                                         line nil t)))
                      (if (string= running "listening")
                          (setq line
                                (replace-regexp-in-string running
                                                          (propertize
                                                           running
                                                           'face
-                                                          'dired-symlink) line nil t)))
+                                                          'font-lock-keyword-face)
+                                                         line nil t)))
                      (if (string= running "failed")
                          (setq line
                                (replace-regexp-in-string running
                                                          (propertize
                                                           running
                                                           'face
-                                                          'diredp-executable-tag) line nil t)))
+                                                          'helm-systemd-failed)
+                                                         line nil t)))
                      (if description
                          (setq line
                                (replace-regexp-in-string
                                 description (propertize
                                              description
                                              'face
-                                             'helm-buffer-process) line nil t)))
+                                             'helm-systemd-info)
+                                line nil t)))
                      line )))
 
 (defmacro helm-systemd-make-action (sysd-verb userp)
