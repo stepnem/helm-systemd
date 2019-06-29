@@ -5,7 +5,7 @@
 ;; Author:  <lompik@oriontabArch>
 ;; Package-Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.2") (with-editor "2.5.0"))
-;; Keywords: convenience
+;; Keywords: convenience, processes, unix
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
