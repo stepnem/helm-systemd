@@ -31,7 +31,7 @@
 (require 'with-editor)
 (require 'subr-x)
 
-(defvar helm-systemd-command-types '("service" "timer" "mount" "target" "socket" "scope" "device"))
+(defvar helm-systemd-unit-types '("service" "timer" "mount" "target" "socket" "scope" "device"))
 (defvar helm-systemd-list-all nil)
 (defvar helm-systemd-list-not-loaded nil)
 (defvar helm-systemd-buffer-name "*Helm systemd log*")
@@ -64,7 +64,7 @@
 (add-to-list 'auto-mode-alist `(, (concat (regexp-quote helm-systemd-buffer-name) "\\'") . helm-systemd-status-mode))
 
 (defun helm-systemd-command-line-option ()
-  (concat "--no-pager --no-legend -t " (car helm-systemd-command-types) (if helm-systemd-list-all " --all")))
+  (concat "--no-pager --no-legend -t " (car helm-systemd-unit-types) (if helm-systemd-list-all " --all")))
 
 (defvar helm-systemd-map
   (let ((map (make-sparse-keymap)))
@@ -83,7 +83,7 @@
                      args)
                " "))
 
-(defun helm-systemd-get-canditates (sysd-options)
+(defun helm-systemd-get-candidates (sysd-options)
   "Return a list of systemd service unit"
   (let* ((result ())
          (leftcolumnwidth
@@ -128,13 +128,13 @@
 
     result ))
 
-(defun  helm-systemd-display (unit-command unit &optional isuser nodisplay)
+(defun  helm-systemd-display (unit-command unit &optional userp nodisplay)
   (with-current-buffer (get-buffer-create helm-systemd-buffer-name)
     (helm-systemd-status-mode)
     (let ((command
-           (helm-systemd-systemctl-command (if isuser "--user") unit-command "--" unit)))
+           (helm-systemd-systemctl-command (if userp "--user") unit-command "--" unit)))
       (insert "\n🔜 " command "\n")
-      (if (or isuser (string= unit-command "status"))
+      (if (or userp (string= unit-command "status"))
           (insert  (shell-command-to-string command))
         (with-temp-buffer
           (cd "/sudo::/")
@@ -148,27 +148,27 @@
 
 (defun helm-systemd-next-type ()
   (interactive)
-  (setq helm-systemd-command-types
-        (append (cdr helm-systemd-command-types)
-                (list (car helm-systemd-command-types))))
+  (setq helm-systemd-unit-types
+        (append (cdr helm-systemd-unit-types)
+                (list (car helm-systemd-unit-types))))
   (with-helm-alive-p
     (helm-force-update )))
 
 (defun helm-systemd-prev-type ()
   (interactive)
-  (setq helm-systemd-command-types
-        (append (last helm-systemd-command-types)
-                (remove (car (last helm-systemd-command-types))
-                        helm-systemd-command-types)))
+  (setq helm-systemd-unit-types
+        (append (last helm-systemd-unit-types)
+                (remove (car (last helm-systemd-unit-types))
+                        helm-systemd-unit-types)))
   (with-helm-alive-p
     (helm-force-update )))
 
-(defun helm-system-persis-action (_line &optional isuser)
+(defun helm-systemd-show-status (_line &optional userp)
   "Show unit status"
   (let ((units (helm-marked-candidates)))
     (mapc (lambda (line)
             (let ((unit (car (split-string line))))
-              (helm-systemd-display "status" unit isuser )))
+              (helm-systemd-display "status" unit userp)))
           units)))
 
 (defun helm-systemd-transformer (candidates source)
@@ -237,10 +237,10 @@
                                              'helm-buffer-process) line nil t)))
                      line )))
 
-(defmacro helm-systemd-make-actions (sysd-verb isuser)
+(defmacro helm-systemd-make-action (sysd-verb userp)
   `(lambda (_ignore)
      (mapc (lambda (candidate)
-             (helm-systemd-display ,sysd-verb (car (split-string candidate)) ,isuser t)
+             (helm-systemd-display ,sysd-verb (car (split-string candidate)) ,userp t)
              (message (concat
                        (cdr (assoc ,sysd-verb helm-systemd-actions-list))
                        " "
@@ -252,13 +252,13 @@
 (defun helm-systemd-build-source ()
   (helm-build-sync-source "systemd"
     :candidates (lambda ()
-                  (reverse (helm-systemd-get-canditates "") ))
+                  (reverse (helm-systemd-get-candidates "") ))
     :action (helm-make-actions
-             "Print"   (helm-systemd-make-actions "status" nil)
-             "Restart" (helm-systemd-make-actions "restart" nil)
-             "Stop"    (helm-systemd-make-actions "stop" nil)
-             "Start"   (helm-systemd-make-actions "start" nil))
-    :persistent-action #'helm-system-persis-action
+             "Print"   (helm-systemd-make-action "status" nil)
+             "Restart" (helm-systemd-make-action "restart" nil)
+             "Stop"    (helm-systemd-make-action "stop" nil)
+             "Start"   (helm-systemd-make-action "start" nil))
+    :persistent-action #'helm-systemd-show-status
     :persistent-help "Show unit status"
     :keymap helm-systemd-map
     :filtered-candidate-transformer #'helm-systemd-transformer))
@@ -266,16 +266,16 @@
 (defun helm-systemd-build-source-user ()
   (helm-build-sync-source "Systemd User"
     :candidates   (lambda ()
-                    (reverse (helm-systemd-get-canditates "--user")))
+                    (reverse (helm-systemd-get-candidates "--user")))
     :action (helm-make-actions
-             "Print"   (helm-systemd-make-actions "status" t)
-             "Restart" (helm-systemd-make-actions "restart" t)
-             "Stop"    (helm-systemd-make-actions "stop" t)
-             "Start"   (helm-systemd-make-actions "start" nil)
+             "Print"   (helm-systemd-make-action "status" t)
+             "Restart" (helm-systemd-make-action "restart" t)
+             "Stop"    (helm-systemd-make-action "stop" t)
+             "Start"   (helm-systemd-make-action "start" nil)
              "Edit with Emacs"   (lambda (candidate)
                                    (add-to-list 'with-editor-envvars "SYSTEMD_EDITOR" t)
                                    (with-editor-async-shell-command (concat "systemctl --user --full edit " (car (split-string candidate))) )))
-    :persistent-action (lambda (line) (funcall #'helm-system-persis-action line t))
+    :persistent-action (lambda (line) (funcall #'helm-systemd-show-status line t))
     :persistent-help "Show unit status"
     :keymap helm-systemd-map
 
