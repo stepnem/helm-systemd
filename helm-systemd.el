@@ -180,15 +180,16 @@ buffer is not displayed, only its contents updated."
   (with-current-buffer (get-buffer-create helm-systemd-buffer-name)
     (helm-systemd-status-mode)
     (let ((command
-           (helm-systemd-systemctl-command (if userp "--user") unit-command "--" unit)))
+           (helm-systemd-systemctl-command (if userp "--user")
+                                           unit-command "--" unit))
+          output)
       (insert "\n🔜 " command "\n")
       (if (or userp (string= unit-command "status"))
           (insert  (shell-command-to-string command))
         (with-temp-buffer
           (cd "/sudo::/")
-          (setq command (shell-command-to-string (concat "sudo " command))))
-        (insert command)
-        )
+          (setq output (shell-command-to-string (concat "sudo " command))))
+        (insert output))
       (insert "\n"))
     (unless nodisplay
       (display-buffer (current-buffer)))))
