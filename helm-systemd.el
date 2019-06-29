@@ -143,7 +143,7 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
 
     (let ((maxunitlength
            (string-to-number leftcolumnwidth)))
-      (maphash (lambda (unit descr)
+      (maphash (lambda (unit _)
                  (setq maxunitlength
                        (max maxunitlength (length unit)))) hash)
       (setq leftcolumnwidth
