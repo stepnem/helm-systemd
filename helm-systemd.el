@@ -142,51 +142,36 @@ This just passes the \"--all\" option to systemctl."
                      args)
                " "))
 
-(defun helm-systemd-get-candidates (sysd-options)
+(defun helm-systemd-get-candidates (&optional sysd-options)
   "Return a list of systemd service units.
-SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
+SYSD-OPTIONS is an options string passed to the systemd subcommand."
   (let* ((result ())
-         (leftcolumnwidth
-          (number-to-string 25))
-         (hash (make-hash-table
-                :test 'equal))
-         (sysd-lu (shell-command-to-string
-                   (helm-systemd-systemctl-command " list-units " sysd-options)))
-         (sysd-lu (delete ""
-                          (split-string sysd-lu
-                                        "\n"))))
-    (mapc (lambda (line)
-            (puthash (car (split-string line)) line hash))
-          sysd-lu)
-    (if helm-systemd-list-not-loaded
-        (let* ((sysd-luf (shell-command-to-string
-                          (helm-systemd-systemctl-command " list-unit-files " sysd-options)))
-               (sysd-luf (delete ""
-                                 (split-string sysd-luf "\n"))))
-          (mapc (lambda (line-luf)
-                  (let ((unit (car
-                               (split-string line-luf))))
-                    (unless (gethash unit hash nil)
-                      (puthash unit line-luf hash)))) sysd-luf)))
-
-    (let ((maxunitlength
-           (string-to-number leftcolumnwidth)))
-      (maphash (lambda (unit _)
-                 (setq maxunitlength
-                       (max maxunitlength (length unit)))) hash)
-      (setq leftcolumnwidth
-            (number-to-string maxunitlength)))
-    (maphash (lambda (unit descr)
-               (let* ((unit_misc
-                       (string-trim-left
-                        (substring descr (length unit) (length descr))))
-                      (formatted_output
-                       (format
-                        (concat "%-" leftcolumnwidth "s %s")
-                        unit unit_misc)))
-                 (push formatted_output result)) ) hash)
-
-    result ))
+         (left-col-width 25)
+         (table (make-hash-table :test 'equal)))
+    (mapc (lambda (line) (puthash (car (split-string line)) line table))
+          (split-string (shell-command-to-string
+                         (helm-systemd-systemctl-command
+                          "list-units" sysd-options))
+                        "\n" t))
+    (when helm-systemd-list-not-loaded
+      (mapc (lambda (line)
+              (let ((unit (car (split-string line))))
+                (unless (gethash unit table nil)
+                  (puthash unit line table))))
+            (split-string (shell-command-to-string
+                           (helm-systemd-systemctl-command
+                            "list-unit-files" sysd-options))
+                          "\n" t)))
+    (maphash (lambda (unit _)
+               (setq left-col-width (max left-col-width (length unit))))
+             table)
+    (setq left-col-width (number-to-string left-col-width))
+    (maphash (lambda (unit line)
+               (let ((desc (string-trim-left (substring line (length unit)))))
+                 (push (format (concat "%-" left-col-width "s %s") unit desc)
+                       result)))
+             table)
+    (nreverse result)))
 
 (defun  helm-systemd-display (unit-command unit &optional userp nodisplay)
   "Display output of systemctl UNIT-COMMAND for UNIT in a buffer.
@@ -322,13 +307,10 @@ action is for a user unit."
                        (car (split-string candidate)))))
            (helm-marked-candidates))))
 
-
-
 (defun helm-systemd-build-source ()
   "Helm source for systemd units."
   (helm-build-sync-source "systemd"
-    :candidates (lambda ()
-                  (reverse (helm-systemd-get-candidates "") ))
+    :candidates #'helm-systemd-get-candidates
     :action (helm-make-actions
              "Print"   (helm-systemd-make-action "status" nil)
              "Restart" (helm-systemd-make-action "restart" nil)
@@ -342,8 +324,7 @@ action is for a user unit."
 (defun helm-systemd-build-source-user ()
   "Helm source for systemd user units."
   (helm-build-sync-source "Systemd User"
-    :candidates   (lambda ()
-                    (reverse (helm-systemd-get-candidates "--user")))
+    :candidates (lambda () (helm-systemd-get-candidates "--user"))
     :action (helm-make-actions
              "Print"   (helm-systemd-make-action "status" t)
              "Restart" (helm-systemd-make-action "restart" t)
@@ -355,7 +336,6 @@ action is for a user unit."
     :persistent-action (lambda (line) (funcall #'helm-systemd-show-status line t))
     :persistent-help "Show unit status"
     :keymap helm-systemd-map
-
     :filtered-candidate-transformer #'helm-systemd-transformer))
 
 ;;;###autoload
