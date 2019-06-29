@@ -34,10 +34,37 @@
 (defgroup helm-systemd nil "Helm interface to systemd units."
   :group 'helm)
 
-(defvar helm-systemd-unit-types '("service" "timer" "mount" "target" "socket" "scope" "device"))
-(defvar helm-systemd-list-all nil)
-(defvar helm-systemd-list-not-loaded nil)
-(defvar helm-systemd-buffer-name "*Helm systemd log*")
+(defcustom helm-systemd-unit-types
+  '("service" "timer" "mount" "target" "socket" "scope" "device")
+  "List of recognized systemd unit types."
+  :group 'helm-systemd
+  :type '(set
+          (const "service")
+          (const "timer")
+          (const "mount")
+          (const "target")
+          (const "socket")
+          (const "scope")
+          (const "device")
+          (const "path")
+          (const "slice")
+          (const "swap")))
+
+(defcustom helm-systemd-list-all nil
+  "If non-nil, list all units/properties, including dead/empty ones.
+This just passes the \"--all\" option to systemctl."
+  :group 'helm-systemd
+  :type 'boolean)
+
+(defcustom helm-systemd-list-not-loaded nil
+  "If non-nil, list all unit files returned by \"systemctl list-unit-files\"."
+  :group 'helm-systemd
+  :type 'boolean)
+
+(defcustom helm-systemd-buffer-name "*Helm systemd log*"
+  "Name of the buffer where systemctl output is displayed."
+  :group 'helm-systemd
+  :type 'string)
 
 (defconst helm-systemd-actions-list
   '(("print". "Printed")
