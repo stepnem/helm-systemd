@@ -95,7 +95,10 @@
   (font-lock-mode t))
 
 (defun helm-systemd-command-line-option ()
-  (concat "--no-pager --no-legend -t " (car helm-systemd-unit-types) (if helm-systemd-list-all " --all")))
+  "Return default systemctl options as a string."
+  (concat "--no-pager --no-legend -t "
+          (car helm-systemd-unit-types)
+          (if helm-systemd-list-all " --all")))
 
 (defvar helm-systemd-map
   (let ((map (make-sparse-keymap)))
@@ -161,6 +164,9 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
     result ))
 
 (defun  helm-systemd-display (unit-command unit &optional userp nodisplay)
+  "Display output of systemctl UNIT-COMMAND for UNIT in a buffer.
+USERP non-nil means UNIT is a user unit. With NODISPLAY non-nil the
+buffer is not displayed, only its contents updated."
   (with-current-buffer (get-buffer-create helm-systemd-buffer-name)
     (helm-systemd-status-mode)
     (let ((command
@@ -178,6 +184,7 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
       (display-buffer (current-buffer)))))
 
 (defun helm-systemd-next-type ()
+  "Cycle to the next systemd unit type."
   (interactive)
   (setq helm-systemd-unit-types
         (append (cdr helm-systemd-unit-types)
@@ -186,6 +193,7 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
     (helm-force-update )))
 
 (defun helm-systemd-prev-type ()
+  "Cycle to the previous systemd unit type."
   (interactive)
   (setq helm-systemd-unit-types
         (append (last helm-systemd-unit-types)
@@ -203,6 +211,8 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
           units)))
 
 (defun helm-systemd-transformer (candidates source)
+  "Candidate transformer for `helm-systemd' sources.
+CANDIDATES is a list of candidates, SOURCE (string) is the source name."
   (cl-loop for i in candidates
            for split = (split-string i)
            for unit = (car split)
@@ -274,6 +284,10 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
                        line))))
 
 (defmacro helm-systemd-make-action (sysd-verb userp)
+  "Helper macro for systemd helm sources.
+Return a lambda function suitable as a helm action.
+SYSD-VERB (string) is the systemd subcommand, USERP non-nil means this
+action is for a user unit."
   `(lambda (_ignore)
      (mapc (lambda (candidate)
              (helm-systemd-display ,sysd-verb (car (split-string candidate)) ,userp t)
@@ -286,6 +300,7 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
 
 
 (defun helm-systemd-build-source ()
+  "Helm source for systemd units."
   (helm-build-sync-source "systemd"
     :candidates (lambda ()
                   (reverse (helm-systemd-get-candidates "") ))
@@ -300,6 +315,7 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
     :filtered-candidate-transformer #'helm-systemd-transformer))
 
 (defun helm-systemd-build-source-user ()
+  "Helm source for systemd user units."
   (helm-build-sync-source "Systemd User"
     :candidates   (lambda ()
                     (reverse (helm-systemd-get-candidates "--user")))
@@ -319,6 +335,7 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
 
 ;;;###autoload
 (defun helm-systemd ()
+  "Use `helm' to inspect and manipulate systemd units."
   (interactive)
   (helm
    :sources (mapcar (lambda (func)
