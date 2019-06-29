@@ -38,7 +38,6 @@
 (defvar helm-systemd-list-all nil)
 (defvar helm-systemd-list-not-loaded nil)
 (defvar helm-systemd-buffer-name "*Helm systemd log*")
-(defvar helm-systemd-status-mode-hook nil )
 
 (defconst helm-systemd-actions-list
   '(("print". "Printed")
