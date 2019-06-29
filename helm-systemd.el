@@ -363,8 +363,7 @@ action is for a user unit."
   "Use `helm' to inspect and manipulate systemd units."
   (interactive)
   (helm
-   :sources (mapcar (lambda (func)
-                      (funcall func))
+   :sources (mapcar #'funcall
                     '(helm-systemd-build-source helm-systemd-build-source-user))
    :truncate-lines t
    :buffer "*helm systemd*"))
