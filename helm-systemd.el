@@ -289,8 +289,7 @@
                       (funcall func))
                     '(helm-systemd-build-source helm-systemd-build-source-user))
    :truncate-lines t
-   :buffer
-   (concat "*helm systemd*")) )
+   :buffer "*helm systemd*"))
 
 (provide 'helm-systemd)
 ;;; helm-systemd.el ends here
