@@ -211,67 +211,67 @@ SYSD-OPTIONS is an options string passed to the systemd \"list-units\" command."
            for running = (nth 3 split)
            for description = (if running (string-join (cl-subseq split 4) " "))
            collect (let ((line i))
-                     (unless (and unit loaded active running description)
-                       line)
-                     (if loaded
-                         (let* ((isenabled
-                                 (car
-                                  (split-string
-                                   (shell-command-to-string
-                                    (string-join `("systemctl" "is-enabled "
-                                                               ,(if (string-match "User"
-                                                                                  (cdr (assoc 'name source)))
-                                                                    "--user")
-                                                               "--" ,unit)
-                                                 " ")))))
-                                (propena (cond ((string= isenabled "enabled") 'helm-systemd-info)
-                                               ((string= isenabled "static") 'helm-systemd-static)
-                                               (t 'helm-systemd-info)))
-                                (isenabled (format "%8s" isenabled) ))
-                           (setq line (if active
-                                          (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " " loaded " ") line nil t)
-                                        (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " ") line nil t))))) ;; list-units case
-                     (if (or (string=  running "mounted") (string=  running "running"))
-                         (setq line
-                               (replace-regexp-in-string running
-                                                         (propertize
-                                                          running
-                                                          'face
-                                                          'helm-systemd-running)
-                                                         line nil t)))
-                     (if (or (string= running "exited") (string= running "dead"))
-                         (setq line
-                               (replace-regexp-in-string running
-                                                         (propertize
-                                                          running
-                                                          'face
-                                                          'helm-systemd-info)
-                                                         line nil t)))
-                     (if (string= running "listening")
-                         (setq line
-                               (replace-regexp-in-string running
-                                                         (propertize
-                                                          running
-                                                          'face
-                                                          'font-lock-keyword-face)
-                                                         line nil t)))
-                     (if (string= running "failed")
-                         (setq line
-                               (replace-regexp-in-string running
-                                                         (propertize
-                                                          running
-                                                          'face
-                                                          'helm-systemd-failed)
-                                                         line nil t)))
-                     (if description
-                         (setq line
-                               (replace-regexp-in-string
-                                description (propertize
-                                             description
-                                             'face
-                                             'helm-systemd-info)
-                                line nil t)))
-                     line )))
+                     (if (not (and unit loaded active running description))
+                         line
+                       (if loaded
+                           (let* ((isenabled
+                                   (car
+                                    (split-string
+                                     (shell-command-to-string
+                                      (string-join `("systemctl" "is-enabled "
+                                                                 ,(if (string-match "User"
+                                                                                    (cdr (assoc 'name source)))
+                                                                      "--user")
+                                                                 "--" ,unit)
+                                                   " ")))))
+                                  (propena (cond ((string= isenabled "enabled") 'helm-systemd-info)
+                                                 ((string= isenabled "static") 'helm-systemd-static)
+                                                 (t 'helm-systemd-info)))
+                                  (isenabled (format "%8s" isenabled) ))
+                             (setq line (if active
+                                            (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " " loaded " ") line nil t)
+                                          (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " ") line nil t))))) ;; list-units case
+                       (if (or (string=  running "mounted") (string=  running "running"))
+                           (setq line
+                                 (replace-regexp-in-string running
+                                                           (propertize
+                                                            running
+                                                            'face
+                                                            'helm-systemd-running)
+                                                           line nil t)))
+                       (if (or (string= running "exited") (string= running "dead"))
+                           (setq line
+                                 (replace-regexp-in-string running
+                                                           (propertize
+                                                            running
+                                                            'face
+                                                            'helm-systemd-info)
+                                                           line nil t)))
+                       (if (string= running "listening")
+                           (setq line
+                                 (replace-regexp-in-string running
+                                                           (propertize
+                                                            running
+                                                            'face
+                                                            'font-lock-keyword-face)
+                                                           line nil t)))
+                       (if (string= running "failed")
+                           (setq line
+                                 (replace-regexp-in-string running
+                                                           (propertize
+                                                            running
+                                                            'face
+                                                            'helm-systemd-failed)
+                                                           line nil t)))
+                       (if description
+                           (setq line
+                                 (replace-regexp-in-string
+                                  description (propertize
+                                               description
+                                               'face
+                                               'helm-systemd-info)
+                                  line nil t)))
+                       line))))
 
 (defmacro helm-systemd-make-action (sysd-verb userp)
   `(lambda (_ignore)
