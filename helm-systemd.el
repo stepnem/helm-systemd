@@ -130,8 +130,9 @@ If non-nil, it should accomodate six string values in order:
 (defvar helm-systemd-status-font-lock-keywords
   '(("^ *\\([^:\n]+?\\): " 1 'helm-systemd-property)
     ("active (running)" 0 'helm-systemd-running)
-    ("inactive (dead)" 0 'helm-systemd-info)
+    ("active (mounted)" 0 'helm-systemd-running)
     ("active (exited)" 0 'helm-systemd-active)
+    ("inactive (dead)" 0 'helm-systemd-info)
 
     ("[fF]ailed" 0 'helm-systemd-failed)
 
