@@ -82,12 +82,6 @@ If non-nil, it should accomodate six string values in order:
   :group 'helm-systemd
   :type 'string)
 
-(defconst helm-systemd-actions-list
-  '(("print". "Printed")
-    ("restart". "Restarted")
-    ("stop" ."Stopped")
-    ("start". "Started")))
-
 (defcustom helm-systemd-angry-fruit-salad t
   "If non-nil, colorize helm completion candidates."
   :group 'helm-systemd
@@ -300,6 +294,12 @@ buffer is not displayed, only its contents updated."
               (helm-systemd-display "status" unit userp)))
           units)))
 
+(defconst helm-systemd-actions-alist
+  '(("print". "Printed")
+    ("restart". "Restarted")
+    ("stop" ."Stopped")
+    ("start". "Started")))
+
 (defmacro helm-systemd-make-action (sysd-verb userp)
   "Helper macro for systemd helm sources.
 Return a lambda function suitable as a helm action.
@@ -309,7 +309,7 @@ action is for a user unit."
      (mapc (lambda (candidate)
              (helm-systemd-display ,sysd-verb (car (split-string candidate)) ,userp t)
              (message (concat
-                       (cdr (assoc ,sysd-verb helm-systemd-actions-list))
+                       (cdr (assoc ,sysd-verb helm-systemd-actions-alist))
                        " "
                        (car (split-string candidate)))))
            (helm-marked-candidates))))
