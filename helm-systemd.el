@@ -132,8 +132,8 @@ If non-nil, it should accomodate six string values in order:
     ("[fF]ailed" 0 'helm-systemd-failed)
 
     ("─\\([0-9]+\\)" 1 'helm-systemd-pid)
-    ("[●🔜] .*" 0 'helm-systemd-info)  ; command lines
-    "Default expressions to highlight in `helm systemd log'."))
+    ("[●🔜] .*" 0 'helm-systemd-info))  ; command lines
+  "Default expressions to highlight in `helm systemd log'.")
 
 (define-derived-mode helm-systemd-status-mode fundamental-mode "Systemd-log"
   "Major mode for viewing systemd status logs.
