@@ -308,7 +308,7 @@ action is for a user unit."
                        (car (split-string candidate)))))
            (helm-marked-candidates))))
 
-(defun helm-systemd-build-source ()
+(defun helm-source-systemd ()
   "Helm source for systemd units."
   (helm-build-sync-source "systemd"
     :candidates #'helm-systemd-get-candidates
@@ -321,7 +321,7 @@ action is for a user unit."
     :persistent-help "Show unit status"
     :keymap helm-systemd-map))
 
-(defun helm-systemd-build-source-user ()
+(defun helm-source-systemd-user ()
   "Helm source for systemd user units."
   (helm-build-sync-source "Systemd User"
     :candidates (lambda () (helm-systemd-get-candidates "--user"))
@@ -343,7 +343,7 @@ action is for a user unit."
   (interactive)
   (helm
    :sources (mapcar #'funcall
-                    '(helm-systemd-build-source helm-systemd-build-source-user))
+                    '(helm-source-systemd helm-source-systemd-user))
    :truncate-lines t
    :buffer "*helm systemd*"))
 
