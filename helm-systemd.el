@@ -28,7 +28,6 @@
 
 (require 'cl-lib)
 (require 'helm)
-(eval-when-compile (require 'rx))
 (require 'subr-x)
 (require 'with-editor)
 
@@ -57,10 +56,26 @@ This just passes the \"--all\" option to systemctl."
   :group 'helm-systemd
   :type 'boolean)
 
-(defcustom helm-systemd-list-not-loaded nil
-  "If non-nil, list all unit files returned by \"systemctl list-unit-files\"."
+(defcustom helm-systemd-line-format nil
+  "Format string describing the display of helm completion candidates.
+If this is nil, try to determine the format dynamically based on the
+helm window width.
+If non-nil, it should accomodate six string values in order:
+
+- systemd unit name
+
+- UnitFileState unit property value
+
+- LoadState unit property value
+
+- ActiveState unit property value
+
+- SubState unit property value
+
+- Description unit property value"
   :group 'helm-systemd
-  :type 'boolean)
+  :type '(choice (const :tag "Dynamic" nil)
+                 (string :tag "Format string")))
 
 (defcustom helm-systemd-buffer-name "*Helm systemd log*"
   "Name of the buffer where systemctl output is displayed."
@@ -148,23 +163,74 @@ This just passes the \"--all\" option to systemctl."
                      args)
                " "))
 
-(defun helm-systemd-propertize-description (unit description userp)
-  "Propertize systemd UNIT DESCRIPTION for display in helm completions buffer.
-USERP non-nil means this is a user unit."
-  (let* ((state
-          (string-trim
+(defvar helm-systemd--unit-regexp
+  (mapconcat (lambda (prop) (format "%s=\\(.*\\)" prop))
+             '("Id" "Description" "LoadState" "ActiveState"
+               "SubState" "UnitFileState")
+             "\n")
+  "Regexp used for property value extraction from systemctl command output.")
+
+(defun helm-systemd-get-candidates (&optional sysd-options)
+  "Return a list of systemd service units.
+SYSD-OPTIONS is an options string passed to the systemd subcommand."
+  (let* (result
+         (format helm-systemd-line-format)
+         (max-unit-width 25)
+         (unit-list
+          (split-string
            (shell-command-to-string
-            (string-join
-             `("systemctl" "is-enabled " ,(when userp "--user") "--" ,unit)
-             " "))))
-         (state (pcase state
-                  ("enabled-runtime" "runtime")
-                  ((rx bos "Failed") "XXXXXX")
-                  (_ state)))
-         (line (concat (format "%8s" state) " " description)))
+            (concat "systemctl " sysd-options " "
+                    (helm-systemd-command-line-option)
+                    " --property=Id,Description,LoadState,"
+                    "ActiveState,SubState,UnitFileState show '*'"))
+           "\n\n" t)))
+    (mapc (lambda (unit)
+            (string-match "^Id=\\(.*\\)$" unit)
+            (let ((len (- (match-end 1) (match-beginning 1))))
+              (when (> len max-unit-width)
+                (setq max-unit-width len))))
+          unit-list)
+    (unless format
+      (let* ((window-width (with-helm-window (window-width)))
+             (width (number-to-string (min max-unit-width
+                                           (- window-width 50)))))
+        (setq format
+              (concat "%-" width "." width "s"
+                      " %-10.10s"
+                      " %-10.10s"
+                      " %-10.10s"
+                      " %-10.10s"
+                      " %s"))))
+    (mapc (lambda (unit)
+            (string-match helm-systemd--unit-regexp unit)
+            (push (helm-systemd-format-line format
+                                            (match-string 1 unit)
+                                            (match-string 2 unit)
+                                            (match-string 3 unit)
+                                            (match-string 4 unit)
+                                            (match-string 5 unit)
+                                            (match-string 6 unit))
+                  result))
+          unit-list)
+    (sort result #'string-lessp)))
+
+(defun helm-systemd-format-line (format id description load active sub state)
+  "Format systemd unit candidate line for helm display.
+FORMAT is the format string for the following values:
+ID is the unit name.
+DESCRIPTION is the Description unit property value.
+LOAD is the LoadState unit property value.
+ACTIVE is the ActiveState unit property value.
+SUB is the SubState unit property value.
+STATE is the UnitFileState unit property value.
+Cf. `helm-systemd--unit-regexp' and `helm-systemd-get-candidates' for
+details."
+  (when (string= "enabled-runtime" state)
+    (setq state "runtime"))
+  (let ((line (format format id state load active sub description))
+        (case-fold-search nil))
     (if (not helm-systemd-angry-fruit-salad)
         line
-      (setq line (propertize line 'face 'helm-systemd-info))
       (dolist (pair '(("enabled" . helm-systemd-info)
                       ("runtime" . helm-systemd-info)
                       ("static" . helm-systemd-static)
@@ -172,47 +238,13 @@ USERP non-nil means this is a user unit."
                       ("mounted" . helm-systemd-running)
                       ("running" . helm-systemd-running)
                       ("listening" . font-lock-keyword-face)
-                      ("failed" . helm-systemd-failed)
-                      ("XXXXXX" . helm-systemd-failed))
+                      ("failed" . helm-systemd-failed))
                     line)
         (setq line
-              (replace-regexp-in-string (concat "\\<" (car pair) "\\>")
-                                        (propertize (car pair) 'face (cdr pair))
-                                        line nil t))))))
-
-(defun helm-systemd-get-candidates (&optional sysd-options)
-  "Return a list of systemd service units.
-SYSD-OPTIONS is an options string passed to the systemd subcommand."
-  (let* ((result ())
-         (left-col-width 25)
-         (table (make-hash-table :test 'equal)))
-    (mapc (lambda (line) (puthash (car (split-string line)) line table))
-          (split-string (shell-command-to-string
-                         (helm-systemd-systemctl-command
-                          "list-units" sysd-options))
-                        "\n" t))
-    (when helm-systemd-list-not-loaded
-      (mapc (lambda (line)
-              (let ((unit (car (split-string line))))
-                (unless (gethash unit table nil)
-                  (puthash unit line table))))
-            (split-string (shell-command-to-string
-                           (helm-systemd-systemctl-command
-                            "list-unit-files" sysd-options))
-                          "\n" t)))
-    (maphash (lambda (unit _)
-               (setq left-col-width (max left-col-width (length unit))))
-             table)
-    (setq left-col-width (number-to-string left-col-width))
-    (maphash (lambda (unit line)
-               (let ((desc (string-trim-left (substring line (length unit)))))
-                 (push (format (concat "%-" left-col-width "s %s")
-                               unit
-                               (helm-systemd-propertize-description
-                                unit desc sysd-options))
-                       result)))
-             table)
-    (nreverse result)))
+              (replace-regexp-in-string
+               (concat " \\(" (car pair) "\\)" "\\(?: \\|\n\\)")
+               (propertize (car pair) 'face (cdr pair))
+               line nil t 1))))))
 
 (defun  helm-systemd-display (unit-command unit &optional userp nodisplay)
   "Display output of systemctl UNIT-COMMAND for UNIT in a buffer.
