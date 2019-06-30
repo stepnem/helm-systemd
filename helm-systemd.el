@@ -2,10 +2,13 @@
 
 ;; Copyright (C) 2016
 
-;; Author:  <lompik@oriontabArch>
-;; Package-Version: 0.0.1
+;; Author: <lompik@oriontabArch>
+;;         Štěpán Němec <stepnem@gmail.com>
+;; Maintainer: Štěpán Němec <stepnem@gmail.com>
+;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.2") (with-editor "2.5.0"))
 ;; Keywords: convenience, processes, unix
+;; Tested-with: GNU Emacs 26
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -24,6 +27,8 @@
 
 ;; Other than the code and doc strings, there is README.org included
 ;; in the repository.
+
+;; Corrections and constructive feedback appreciated.
 
 ;;; Code:
 
