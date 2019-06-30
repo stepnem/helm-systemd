@@ -157,12 +157,6 @@ If non-nil, it should accomodate six string values in order:
     map)
   "Keymap for `helm-systemd'.")
 
-(defun helm-systemd-systemctl-command (&rest args)
-  "Construct string with: 'systemctl default-args' ARGS."
-  (string-join (push (concat "systemctl " (helm-systemd-command-line-option))
-                     args)
-               " "))
-
 (defvar helm-systemd--unit-regexp
   (mapconcat (lambda (prop) (format "%s=\\(.*\\)" prop))
              '("Id" "Description" "LoadState" "ActiveState"
@@ -252,9 +246,11 @@ USERP non-nil means UNIT is a user unit. With NODISPLAY non-nil the
 buffer is not displayed, only its contents updated."
   (with-current-buffer (get-buffer-create helm-systemd-buffer-name)
     (helm-systemd-status-mode)
-    (let ((command
-           (helm-systemd-systemctl-command (if userp "--user")
-                                           unit-command "--" unit))
+    (let ((command (string-join `("systemctl"
+                                  ,(helm-systemd-command-line-option)
+                                  ,(when userp "--user")
+                                  ,unit-command "--" ,unit)
+                                " "))
           output)
       (insert "\n🔜 " command "\n")
       (if (or userp (string= unit-command "status"))
