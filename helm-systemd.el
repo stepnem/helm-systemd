@@ -164,7 +164,7 @@ If non-nil, it should accomodate six string values in order:
              "\n")
   "Regexp used for property value extraction from systemctl command output.")
 
-(defun helm-systemd-get-candidates (&optional sysd-options)
+(defun helm-systemd--get-candidates (&optional sysd-options)
   "Return a list of systemd service units.
 SYSD-OPTIONS is an options string passed to the systemd subcommand."
   (let* (result
@@ -197,18 +197,18 @@ SYSD-OPTIONS is an options string passed to the systemd subcommand."
                       " %s"))))
     (mapc (lambda (unit)
             (string-match helm-systemd--unit-regexp unit)
-            (push (helm-systemd-format-line format
-                                            (match-string 1 unit)
-                                            (match-string 2 unit)
-                                            (match-string 3 unit)
-                                            (match-string 4 unit)
-                                            (match-string 5 unit)
-                                            (match-string 6 unit))
+            (push (helm-systemd--format-line format
+                                             (match-string 1 unit)
+                                             (match-string 2 unit)
+                                             (match-string 3 unit)
+                                             (match-string 4 unit)
+                                             (match-string 5 unit)
+                                             (match-string 6 unit))
                   result))
           unit-list)
     (sort result #'string-lessp)))
 
-(defun helm-systemd-format-line (format id description load active sub state)
+(defun helm-systemd--format-line (format id description load active sub state)
   "Format systemd unit candidate line for helm display.
 FORMAT is the format string for the following values:
 ID is the unit name.
@@ -217,7 +217,7 @@ LOAD is the LoadState unit property value.
 ACTIVE is the ActiveState unit property value.
 SUB is the SubState unit property value.
 STATE is the UnitFileState unit property value.
-Cf. `helm-systemd--unit-regexp' and `helm-systemd-get-candidates' for
+Cf. `helm-systemd--unit-regexp' and `helm-systemd--get-candidates' for
 details."
   (when (string= "enabled-runtime" state)
     (setq state "runtime"))
@@ -240,7 +240,7 @@ details."
                (propertize (car pair) 'face (cdr pair))
                line nil t 1))))))
 
-(defun  helm-systemd-display (unit-command unit &optional userp nodisplay)
+(defun  helm-systemd--display (unit-command unit &optional userp nodisplay)
   "Display output of systemctl UNIT-COMMAND for UNIT in a buffer.
 USERP non-nil means UNIT is a user unit. With NODISPLAY non-nil the
 buffer is not displayed, only its contents updated."
@@ -287,7 +287,7 @@ buffer is not displayed, only its contents updated."
   (let ((units (helm-marked-candidates)))
     (mapc (lambda (line)
             (let ((unit (car (split-string line))))
-              (helm-systemd-display "status" unit userp)))
+              (helm-systemd--display "status" unit userp)))
           units)))
 
 (defconst helm-systemd-actions-alist
@@ -303,7 +303,7 @@ SYSD-VERB (string) is the systemd subcommand, USERP non-nil means this
 action is for a user unit."
   `(lambda (_ignore)
      (mapc (lambda (candidate)
-             (helm-systemd-display ,sysd-verb (car (split-string candidate))
+             (helm-systemd--display ,sysd-verb (car (split-string candidate))
                                    ,userp t)
              (message (concat
                        (cdr (assoc ,sysd-verb helm-systemd-actions-alist))
@@ -314,7 +314,7 @@ action is for a user unit."
 (defun helm-source-systemd ()
   "Helm source for systemd units."
   (helm-build-sync-source "systemd"
-    :candidates #'helm-systemd-get-candidates
+    :candidates #'helm-systemd--get-candidates
     :action (helm-make-actions
              "Print"   (helm-systemd-make-action "status" nil)
              "Restart" (helm-systemd-make-action "restart" nil)
@@ -327,7 +327,7 @@ action is for a user unit."
 (defun helm-source-systemd-user ()
   "Helm source for systemd user units."
   (helm-build-sync-source "Systemd User"
-    :candidates (lambda () (helm-systemd-get-candidates "--user"))
+    :candidates (lambda () (helm-systemd--get-candidates "--user"))
     :action (helm-make-actions
              "Print"   (helm-systemd-make-action "status" t)
              "Restart" (helm-systemd-make-action "restart" t)
