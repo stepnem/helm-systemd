@@ -307,7 +307,8 @@ SYSD-VERB (string) is the systemd subcommand, USERP non-nil means this
 action is for a user unit."
   `(lambda (_ignore)
      (mapc (lambda (candidate)
-             (helm-systemd-display ,sysd-verb (car (split-string candidate)) ,userp t)
+             (helm-systemd-display ,sysd-verb (car (split-string candidate))
+                                   ,userp t)
              (message (concat
                        (cdr (assoc ,sysd-verb helm-systemd-actions-alist))
                        " "
@@ -336,10 +337,14 @@ action is for a user unit."
              "Restart" (helm-systemd-make-action "restart" t)
              "Stop"    (helm-systemd-make-action "stop" t)
              "Start"   (helm-systemd-make-action "start" nil)
-             "Edit with Emacs"   (lambda (candidate)
-                                   (add-to-list 'with-editor-envvars "SYSTEMD_EDITOR" t)
-                                   (with-editor-async-shell-command (concat "systemctl --user --full edit " (car (split-string candidate))) )))
-    :persistent-action (lambda (line) (funcall #'helm-systemd-show-status line t))
+             "Edit with Emacs"
+             (lambda (candidate)
+               (add-to-list 'with-editor-envvars "SYSTEMD_EDITOR" t)
+               (with-editor-async-shell-command
+                   (concat "systemctl --user --full edit "
+                           (car (split-string candidate))))))
+    :persistent-action (lambda (line)
+                         (funcall #'helm-systemd-show-status line t))
     :persistent-help "Show unit status"
     :keymap helm-systemd-map))
 
