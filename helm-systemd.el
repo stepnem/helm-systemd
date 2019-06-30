@@ -246,6 +246,7 @@ USERP non-nil means UNIT is a user unit. With NODISPLAY non-nil the
 buffer is not displayed, only its contents updated."
   (with-current-buffer (get-buffer-create helm-systemd-buffer-name)
     (helm-systemd-status-mode)
+    (goto-char (point-max))
     (let ((command (string-join `("systemctl"
                                   ,(helm-systemd-command-line-option)
                                   ,(when userp "--user")
