@@ -22,7 +22,8 @@
 
 ;;; Commentary:
 
-;;
+;; Other than the code and doc strings, there is README.org included
+;; in the repository.
 
 ;;; Code:
 
@@ -344,7 +345,11 @@ action is for a user unit."
 
 ;;;###autoload
 (defun helm-systemd ()
-  "Use `helm' to inspect and manipulate systemd units."
+  "Use `helm' to inspect and manipulate systemd units.
+Use `helm-systemd-next-type' and `helm-systemd-prev-type' to cycle
+between available unit types.
+
+\\{helm-systemd-map}"
   (interactive)
   (helm
    :sources (mapcar #'funcall

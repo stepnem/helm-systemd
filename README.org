@@ -2,17 +2,22 @@
 
 This package lets you Start/Restart/Stop and view status of systemd units with helm.
 
-Main keys are ~tab~ to select either of Start/Restart/Stop and ~C-j~ to view the selected unit status in a special buffer. User's units come in a separate source, ~C-o~ to switch to the latter. Systemd unit type (service, timers, mount, etc) can be cycled with ~C-[~ and ~C-]~.
+Main keys are ~tab~ to select either of Start/Restart/Stop and ~C-j~ to view the selected unit status in a special buffer. User units come in a separate source, ~C-o~ to switch to it. Systemd unit type (service, timers, mount, etc) can be cycled with ~C-[~ and ~C-]~.
 * Screenshot
 [[./Images/]]
 [[file:./Images/2016-04-23-11:11:38_2160x1327+0+24.png]]
 * Configuration
 
-| variable                     | description                        |
-|------------------------------+------------------------------------|
-| helm-systemd-list-all        | Pass the "--all" option to systemd |
-| helm-systemd-list-not-loaded | Also show units not yet loaded     |
-If you don't see some units, set these 2 variables to ~t~.
+| variable                       | description                                        |
+|--------------------------------+----------------------------------------------------|
+| helm-systemd-list-all          | Pass the "--all" option to systemd.                |
+| helm-systemd-unit-types        | List of recognized systemd unit types.             |
+
+If you don't see some units, try setting these variables.
+
+The colors are also customizable.
+
+You can view and edit all options e.g. using ~M-x customize-group RET helm-systemd RET~.
 
 * TODOs
 Ideas for improvement go here.
