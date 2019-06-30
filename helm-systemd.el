@@ -231,14 +231,14 @@ details."
         (case-fold-search nil))
     (if (not helm-systemd-angry-fruit-salad)
         line
-      (dolist (pair '(("enabled" . helm-systemd-active)
-                      ("runtime" . helm-systemd-info)
-                      ("static" . helm-systemd-static)
-                      ("active" . helm-systemd-active)
+      (dolist (pair '(("active" . helm-systemd-active)
+                      ("enabled" . helm-systemd-active)
+                      ("failed" . helm-systemd-failed)
+                      ("listening" . helm-systemd-active)
                       ("mounted" . helm-systemd-running)
                       ("running" . helm-systemd-running)
-                      ("listening" . font-lock-keyword-face)
-                      ("failed" . helm-systemd-failed))
+                      ("runtime" . helm-systemd-info)
+                      ("static" . helm-systemd-static))
                     line)
         (setq line
               (replace-regexp-in-string
