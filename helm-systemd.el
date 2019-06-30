@@ -26,8 +26,7 @@
 
 ;;; Code:
 
-(require 'cl-lib)
-(require 'helm)
+(require 'helm-mode)
 (require 'subr-x)
 (require 'with-editor)
 
