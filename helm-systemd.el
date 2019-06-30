@@ -123,7 +123,7 @@ If non-nil, it should accomodate six string values in order:
   :group 'helm-systemd)
 
 (defvar helm-systemd-status-font-lock-keywords
-  '(("\\(Loaded\\|Active\\|Status\\|Docs\\|Process\\|Main PID\\|Tasks\\|CGroup\\):" 1 'helm-systemd-property)
+  '(("^ *\\([^:\n]+?\\): " 1 'helm-systemd-property)
     ("active (running)" 0 'helm-systemd-running)
     ("inactive (dead)" 0 'helm-systemd-info)
     ("active (exited)" 0 'helm-systemd-active)
