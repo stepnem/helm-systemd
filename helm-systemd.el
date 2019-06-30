@@ -236,7 +236,7 @@ details."
         (case-fold-search nil))
     (if (not helm-systemd-angry-fruit-salad)
         line
-      (dolist (pair '(("enabled" . helm-systemd-info)
+      (dolist (pair '(("enabled" . helm-systemd-active)
                       ("runtime" . helm-systemd-info)
                       ("static" . helm-systemd-static)
                       ("active" . helm-systemd-active)
