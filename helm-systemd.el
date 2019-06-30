@@ -102,6 +102,11 @@ If non-nil, it should accomodate six string values in order:
   "Face used for systemd informative text."
   :group 'helm-systemd)
 
+(defface helm-systemd-pid
+    '((t (:inherit font-lock-constant-face)))
+  "Face used for process ID."
+  :group 'helm-systemd)
+
 (defface helm-systemd-static
     '((t (:foreground "magenta")))
   "Face used for systemd static unit status."
@@ -130,7 +135,7 @@ If non-nil, it should accomodate six string values in order:
 
     ("[fF]ailed" 0 'helm-systemd-failed)
 
-    ("─\\([0-9]+\\)" 1 'helm-systemd-info) ; PID
+    ("─\\([0-9]+\\)" 1 'helm-systemd-pid)
     ("[●🔜] .*" 0 'helm-systemd-info)  ; command lines
     "Default expressions to highlight in `helm systemd log'."))
 
