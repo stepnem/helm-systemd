@@ -8,7 +8,7 @@
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.2") (with-editor "2.5.0"))
 ;; Keywords: convenience, processes, unix
-;; Tested-with: GNU Emacs 26
+;; Tested-with: GNU Emacs 27
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
