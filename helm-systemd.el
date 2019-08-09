@@ -136,7 +136,7 @@ If non-nil, it should accomodate six string values in order:
 
 (defun helm-systemd-command-line-option ()
   "Return default systemctl options as a string."
-  (concat "--no-pager --no-legend -t "
+  (concat "--full --no-pager --no-legend -t "
           (car helm-systemd-unit-types)
           (if helm-systemd-list-all " --all")))
 
