@@ -59,6 +59,10 @@
 This just passes the \"--all\" option to systemctl."
   :type 'boolean)
 
+(defcustom helm-systemd-list-not-loaded nil
+  "If non-nil, list all unit files returned by \"systemctl list-unit-files\"."
+  :type 'boolean)
+
 (defcustom helm-systemd-line-format nil
   "Format string describing the display of helm completion candidates.
 If this is nil, try to determine the format dynamically based on the
@@ -160,27 +164,28 @@ If non-nil, it should accomodate six string values in order:
 (defun helm-systemd--get-candidates (&optional sysd-options)
   "Return a list of systemd service units.
 SYSD-OPTIONS is an options string passed to the systemd subcommand."
-  (let* (result
-         (format helm-systemd-line-format)
-         (max-unit-width 25)
-         (unit-list
-          (split-string
-           (shell-command-to-string
-            (concat "systemctl " sysd-options " "
-                    (helm-systemd-command-line-option)
-                    " --property=Id,Description,LoadState,"
-                    "ActiveState,SubState,UnitFileState show '*'"))
-           "\n\n" t)))
-    (mapc (lambda (unit)
-            (string-match "^Id=\\(.*\\)$" unit)
-            (let ((len (- (match-end 1) (match-beginning 1))))
-              (when (> len max-unit-width)
-                (setq max-unit-width len))))
-          unit-list)
+  (let (result
+        unit-ids
+        (window-width (with-helm-window (window-width)))
+        (format helm-systemd-line-format)
+        (max-unit-width 25)
+        (unit-list
+         (split-string
+          (shell-command-to-string
+           (concat "systemctl " sysd-options " "
+                   (helm-systemd-command-line-option)
+                   " --property=Id,Description,LoadState,"
+                   "ActiveState,SubState,UnitFileState show '*'"))
+          "\n\n" t)))
+    (dolist (unit unit-list)
+      (string-match "^Id=\\(.*\\)$" unit)
+      (push (match-string 1 unit) unit-ids)
+      (let ((len (- (match-end 1) (match-beginning 1))))
+        (when (> len max-unit-width)
+          (setq max-unit-width len))))
     (unless format
-      (let* ((window-width (with-helm-window (window-width)))
-             (width (number-to-string (min max-unit-width
-                                           (- window-width 50)))))
+      (let ((width (number-to-string (min max-unit-width
+                                          (- window-width 50)))))
         (setq format
               (concat "%-" width "." width "s"
                       " %-10.10s"
@@ -188,18 +193,45 @@ SYSD-OPTIONS is an options string passed to the systemd subcommand."
                       " %-10.10s"
                       " %-10.10s"
                       " %s"))))
-    (mapc (lambda (unit)
-            (string-match helm-systemd--unit-regexp unit)
-            (push (helm-systemd--format-line format
-                                             (match-string 1 unit)
-                                             (match-string 2 unit)
-                                             (match-string 3 unit)
-                                             (match-string 4 unit)
-                                             (match-string 5 unit)
-                                             (match-string 6 unit))
-                  result))
-          unit-list)
+    (dolist (unit unit-list)
+      (string-match helm-systemd--unit-regexp unit)
+      (push (helm-systemd--format-line format
+                                       (match-string 1 unit)
+                                       (match-string 2 unit)
+                                       (match-string 3 unit)
+                                       (match-string 4 unit)
+                                       (match-string 5 unit)
+                                       (match-string 6 unit))
+            result))
+    (when helm-systemd-list-not-loaded
+      (dolist (item (split-string
+                     (shell-command-to-string
+                      (concat "systemctl " sysd-options " "
+                              (helm-systemd-command-line-option)
+                              " list-unit-files"))
+                     "\n" t))
+        (pcase-let ((`(,id ,state) (split-string item)))
+          (unless (member id unit-ids)
+            (push (format format id "" "" (helm-systemd--propertize state) "" "")
+                  result)))))
     (sort result #'string-lessp)))
+
+(defun helm-systemd--propertize (string)
+  "Return STRING propertized with colors."
+  (dolist (pair '(("active" . helm-systemd-active)
+                  ("enabled" . helm-systemd-active)
+                  ("failed" . helm-systemd-failed)
+                  ("listening" . helm-systemd-active)
+                  ("mounted" . helm-systemd-running)
+                  ("running" . helm-systemd-running)
+                  ("runtime" . helm-systemd-info)
+                  ("static" . helm-systemd-static))
+                string)
+    (setq string
+          (replace-regexp-in-string
+           (concat "\\(?:\\`\\| \\)\\(" (car pair) "\\)" "\\(?: \\|\n\\|\\'\\)")
+           (propertize (car pair) 'face (cdr pair))
+           string nil t 1))))
 
 (defun helm-systemd--format-line (format id description load active sub state)
   "Format systemd unit candidate line for helm display.
@@ -218,20 +250,7 @@ details."
         (case-fold-search nil))
     (if (not helm-systemd-angry-fruit-salad)
         line
-      (dolist (pair '(("active" . helm-systemd-active)
-                      ("enabled" . helm-systemd-active)
-                      ("failed" . helm-systemd-failed)
-                      ("listening" . helm-systemd-active)
-                      ("mounted" . helm-systemd-running)
-                      ("running" . helm-systemd-running)
-                      ("runtime" . helm-systemd-info)
-                      ("static" . helm-systemd-static))
-                    line)
-        (setq line
-              (replace-regexp-in-string
-               (concat " \\(" (car pair) "\\)" "\\(?: \\|\n\\)")
-               (propertize (car pair) 'face (cdr pair))
-               line nil t 1))))))
+      (helm-systemd--propertize line))))
 
 (defun  helm-systemd--display (unit-command unit &optional userp nodisplay)
   "Display output of systemctl UNIT-COMMAND for UNIT in a buffer.

@@ -8,10 +8,11 @@ Main keys are ~tab~ to select either of Start/Restart/Stop and ~C-j~ to view the
 [[file:./Images/2016-04-23-11:11:38_2160x1327+0+24.png]]
 * Configuration
 
-| variable                       | description                                        |
-|--------------------------------+----------------------------------------------------|
-| helm-systemd-list-all          | Pass the "--all" option to systemd.                |
-| helm-systemd-unit-types        | List of recognized systemd unit types.             |
+| variable                     | description                            |
+|------------------------------+----------------------------------------|
+| helm-systemd-list-all        | Pass the "--all" option to systemd.    |
+| help-systemd-list-not-loaded | List all unit files.                   |
+| helm-systemd-unit-types      | List of recognized systemd unit types. |
 
 If you don't see some units, try setting these variables.
 
