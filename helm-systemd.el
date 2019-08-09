@@ -42,7 +42,6 @@
 (defcustom helm-systemd-unit-types
   '("service" "timer" "mount" "target" "socket" "scope" "device")
   "List of recognized systemd unit types."
-  :group 'helm-systemd
   :type '(set
           (const "service")
           (const "timer")
@@ -58,7 +57,6 @@
 (defcustom helm-systemd-list-all nil
   "If non-nil, list all units/properties, including dead/empty ones.
 This just passes the \"--all\" option to systemctl."
-  :group 'helm-systemd
   :type 'boolean)
 
 (defcustom helm-systemd-line-format nil
@@ -78,54 +76,44 @@ If non-nil, it should accomodate six string values in order:
 - SubState unit property value
 
 - Description unit property value"
-  :group 'helm-systemd
   :type '(choice (const :tag "Dynamic" nil)
                  (string :tag "Format string")))
 
 (defcustom helm-systemd-buffer-name "*Helm systemd log*"
   "Name of the buffer where systemctl output is displayed."
-  :group 'helm-systemd
   :type 'string)
 
 (defcustom helm-systemd-angry-fruit-salad t
   "If non-nil, colorize helm completion candidates."
-  :group 'helm-systemd
   :type 'boolean)
 
 (defface helm-systemd-property
     '((t (:inherit font-lock-keyword-face)))
-  "Face used for systemd property text."
-  :group 'helm-systemd)
+  "Face used for systemd property text.")
 
 (defface helm-systemd-info
     '((t (:inherit font-lock-comment-face)))
-  "Face used for systemd informative text."
-  :group 'helm-systemd)
+  "Face used for systemd informative text.")
 
 (defface helm-systemd-pid
     '((t (:inherit font-lock-constant-face)))
-  "Face used for process ID."
-  :group 'helm-systemd)
+  "Face used for process ID.")
 
 (defface helm-systemd-static
     '((t (:foreground "magenta")))
-  "Face used for systemd static unit status."
-  :group 'helm-systemd)
+  "Face used for systemd static unit status.")
 
 (defface helm-systemd-running
     '((t (:foreground "green" :bold t)))
-  "Face used for systemd running unit status."
-  :group 'helm-systemd)
+  "Face used for systemd running unit status.")
 
 (defface helm-systemd-active
     '((t (:foreground "green")))
-  "Face used for systemd active unit status."
-  :group 'helm-systemd)
+  "Face used for systemd active unit status.")
 
 (defface helm-systemd-failed
     '((t (:foreground "red" :bold t)))
-  "Face used for systemd failed unit status."
-  :group 'helm-systemd)
+  "Face used for systemd failed unit status.")
 
 (defvar helm-systemd-status-font-lock-keywords
   '(("^ *\\([^:\n]+?\\): " 1 'helm-systemd-property)
