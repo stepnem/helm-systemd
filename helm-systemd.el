@@ -309,30 +309,30 @@ buffer is not displayed, only its contents updated."
     ("stop" ."Stopped")
     ("start". "Started")))
 
-(defmacro helm-systemd-make-action (sysd-verb userp)
+(defun helm-systemd-make-action (sysd-verb &optional userp)
   "Helper macro for systemd helm sources.
 Return a lambda function suitable as a helm action.
 SYSD-VERB (string) is the systemd subcommand, USERP non-nil means this
 action is for a user unit."
-  `(lambda (_ignore)
-     (mapc (lambda (candidate)
-             (helm-systemd--display ,sysd-verb (car (split-string candidate))
-                                   ,userp t)
-             (message (concat
-                       (cdr (assoc ,sysd-verb helm-systemd-actions-alist))
-                       " "
-                       (car (split-string candidate)))))
-           (helm-marked-candidates))))
+  (lambda (_)
+    (mapc (lambda (candidate)
+            (let ((unit (car (split-string candidate))))
+              (helm-systemd--display sysd-verb unit userp t)
+              (message (concat
+                        (cdr (assoc sysd-verb helm-systemd-actions-alist))
+                        " "
+                        unit))))
+          (helm-marked-candidates))))
 
 (defun helm-source-systemd ()
   "Helm source for systemd units."
   (helm-build-sync-source "system units"
     :candidates #'helm-systemd--get-candidates
     :action (helm-make-actions
-             "Print"   (helm-systemd-make-action "status" nil)
-             "Restart" (helm-systemd-make-action "restart" nil)
-             "Stop"    (helm-systemd-make-action "stop" nil)
-             "Start"   (helm-systemd-make-action "start" nil))
+             "Print"   (helm-systemd-make-action "status")
+             "Restart" (helm-systemd-make-action "restart")
+             "Stop"    (helm-systemd-make-action "stop")
+             "Start"   (helm-systemd-make-action "start"))
     :persistent-action #'helm-systemd-show-status
     :persistent-help "Show unit status"
     :keymap helm-systemd-map))
