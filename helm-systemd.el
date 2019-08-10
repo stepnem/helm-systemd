@@ -1,4 +1,4 @@
-;;; helm-systemd.el --- helm interface to systemd units -*- lexical-binding: t; -*-
+;;; helm-systemd.el --- helm interface to systemd units -*- lexical-binding:t-*-
 
 ;; Copyright (C) 2016
 
