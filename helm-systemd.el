@@ -345,7 +345,7 @@ action is for a user unit."
              "Print"   (helm-systemd-make-action "status" t)
              "Restart" (helm-systemd-make-action "restart" t)
              "Stop"    (helm-systemd-make-action "stop" t)
-             "Start"   (helm-systemd-make-action "start" nil)
+             "Start"   (helm-systemd-make-action "start" t)
              "Edit with Emacs"
              (lambda (candidate)
                (add-to-list 'with-editor-envvars "SYSTEMD_EDITOR" t)
