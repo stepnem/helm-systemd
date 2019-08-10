@@ -326,7 +326,7 @@ action is for a user unit."
 
 (defun helm-source-systemd ()
   "Helm source for systemd units."
-  (helm-build-sync-source "systemd"
+  (helm-build-sync-source "system units"
     :candidates #'helm-systemd--get-candidates
     :action (helm-make-actions
              "Print"   (helm-systemd-make-action "status" nil)
@@ -339,7 +339,7 @@ action is for a user unit."
 
 (defun helm-source-systemd-user ()
   "Helm source for systemd user units."
-  (helm-build-sync-source "Systemd User"
+  (helm-build-sync-source "user units"
     :candidates (lambda () (helm-systemd--get-candidates "--user"))
     :action (helm-make-actions
              "Print"   (helm-systemd-make-action "status" t)
