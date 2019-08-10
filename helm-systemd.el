@@ -33,7 +33,7 @@
 ;;; Code:
 
 (require 'helm-mode)
-(require 'subr-x)
+(require 'subr-x)                       ; string-join
 (require 'with-editor)
 
 (defgroup helm-systemd nil "Helm interface to systemd units."
