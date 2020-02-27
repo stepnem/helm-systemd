@@ -5,10 +5,11 @@
 ;; Author: <lompik@oriontabArch>
 ;;         Štěpán Němec <stepnem@gmail.com>
 ;; Maintainer: Štěpán Němec <stepnem@gmail.com>
-;; Version: 0.1.0
+;; URL: https://github.com/stepnem/helm-systemd
+;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.2") (with-editor "2.5.0"))
 ;; Keywords: convenience, processes, unix
-;; Tested-with: GNU Emacs 27
+;; Tested-with: GNU Emacs 27, 28
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
