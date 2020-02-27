@@ -255,7 +255,7 @@ details."
 
 (defun  helm-systemd--display (unit-command unit &optional userp nodisplay)
   "Display output of systemctl UNIT-COMMAND for UNIT in a buffer.
-USERP non-nil means UNIT is a user unit. With NODISPLAY non-nil the
+USERP non-nil means UNIT is a user unit.  With NODISPLAY non-nil the
 buffer is not displayed, only its contents updated."
   (with-current-buffer (get-buffer-create helm-systemd-buffer-name)
     (helm-systemd-status-mode)
@@ -297,7 +297,7 @@ buffer is not displayed, only its contents updated."
     (helm-force-update )))
 
 (defun helm-systemd-show-status (_line &optional userp)
-  "Show unit status. USERP non-nil means this is a user unit."
+  "Show unit status.  USERP non-nil means this is a user unit."
   (let ((units (helm-marked-candidates)))
     (mapc (lambda (line)
             (let ((unit (car (split-string line))))
