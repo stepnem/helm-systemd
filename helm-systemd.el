@@ -366,8 +366,7 @@ between available unit types.
 \\{helm-systemd-map}"
   (interactive)
   (helm
-   :sources (mapcar #'funcall
-                    '(helm-source-systemd helm-source-systemd-user))
+   :sources `(,(helm-source-systemd) ,(helm-source-systemd-user))
    :truncate-lines t
    :buffer "*helm systemd*"))
 
